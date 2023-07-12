@@ -38,7 +38,7 @@ def plot_stocks_with_barrier(stock_names, barrier_level, period):
 # Streamlit app code
 def main():
     # Set the page title
-    st.title('Stock Chart with Barrier Level')
+    st.title('Optmize your product')
 
     # Input stock names and barrier level
     stock_names = st.text_input('Enter Stock Names (comma-separated)', 'AAPL,GOOGL,MSFT').split(',')
