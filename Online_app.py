@@ -1,82 +1,89 @@
 import streamlit as st
+import datetime
 import pandas as pd
-import yfinance as yf
-import matplotlib.pyplot as plt
-import seaborn as sns
+import requests
+import os
+import sys
+from PIL import Image
+from io import StringIO
+from openbb_terminal.stocks.stocks_helper import load
+from openbb_terminal.common.technical_analysis.volatility_view import display_bbands, display_donchian
 
-# Set Seaborn style
-sns.set_style('darkgrid')
+st.write("""
+# Technical Analysis Web Application
+Leveraging the openbb sdk, we can build a web application to display 
+technical analysis graphs for any stock.
+""")
 
-def get_stock_description(stock_name):
-    # Retrieve stock information using yfinance
-    stock = yf.Ticker(stock_name)
-    info = stock.info
+st.sidebar.header('User Input Parameters')
 
-    # Extract relevant information
-    description = info.get('longBusinessSummary', 'N/A')
-    sector = info.get('sector', 'N/A')
-    industry = info.get('industry', 'N/A')
+today = datetime.date.today()
+def user_input_features():
+    ticker = st.sidebar.text_input("Ticker", 'ZIM')
+    start_date = st.sidebar.text_input("Start Date", '2020-05-01')
+    end_date = st.sidebar.text_input("End Date", f'{today}')
+    # ta_range = st.sidebar.number_input("TA Range", min_value=1, max_value=50)
+    return ticker, start_date, end_date # , ta_range
 
-    return description, sector, industry
+symbol, start, end = user_input_features()
 
-def plot_stocks_with_barrier(stock_names, barrier_level, period):
-    # Create a DataFrame to store the stock data
-    stock_data = pd.DataFrame()
 
-    # Fetch stock data for each stock name
-    for stock_name in stock_names:
-        stock = yf.Ticker(stock_name)
-        stock_history = stock.history(period=period)['Close']
-        stock_data[stock_name] = stock_history / stock_history.iloc[-1] * 100  # Normalize to base 100 from the end
+def remove_existing_file(func):
+    def wrapper(*args, **kwargs):
+        old_stdin = sys.stdin
+        sys.stdin = StringIO("y")
+        stream = os.popen('cd ~ && pwd')
+        root_dir = stream.read()
+        sample_dir = root_dir.strip()
+        # remove /home/codespace/OpenBBUserData/exports/bbands.png already
+        # get last arg as export
+        export = args[-1]
+        temp_image = os.path.join(sample_dir, "OpenBBUserData", "exports", export)
+        # if exists erase
+        if os.path.exists(temp_image):
+            os.remove(temp_image)
+        func(*args, **kwargs)
+        sys.stdin = old_stdin
+        if os.path.exists(temp_image):
+            return temp_image
+        return None
+    return wrapper
 
-    # Plotting the stock prices
-    plt.figure(figsize=(10, 6))
-    for stock_name in stock_names:
-        plt.plot(stock_data[stock_name], label=stock_name, linewidth=2)
+@remove_existing_file
+@st.cache_data
+def build_bbands_img(data, symbol, window=15, n_std=2, export="bbands.png"):
+    return display_bbands(data, symbol, window, n_std, export=export)
 
-    plt.axhline(barrier_level, color='red', linestyle='--', label='Barrier Level', linewidth=2)
-    plt.xlabel('Date')
-    plt.ylabel('Normalized Price (Base 100 from the end)')
-    plt.title('Optimize your idea')
-    plt.legend()
-    plt.tight_layout()
 
-    # Set plot style
-    sns.despine()
+@remove_existing_file
+@st.cache_data
+def build_donchian_img(data, symbol, export="donchian.png"):
+    return display_donchian(data, symbol, export=export)
+company_name = symbol.upper()
 
-    # Display the plot
-    st.pyplot(plt)
+start = pd.to_datetime(start)
+end = pd.to_datetime(end)
 
-# Streamlit app code
-def main():
-    # Set the page title
-    st.title('Stock Chart with Barrier Level')
+# Read data 
+data = load(symbol,start, 1440, end)
+st.write(data)
+# Adjusted Close Price
+st.header(f"Adjusted Close Price\n {company_name}")
+st.line_chart(data["Close"])
 
-    # Input stock names and barrier level
-    stock_names = st.text_input('Enter Stock Names (comma-separated)', 'AAPL,GOOGL,MSFT').split(',')
-    barrier_level = st.slider('Enter Barrier Level', 0.0, 200.0, 100.0, step=0.1)
-    period = st.selectbox('Select Period', ('6mo', '1y', '1d', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'))
+# get ta graph
+bbands_img = build_bbands_img(data, symbol, 15, 2, "bbands.png")
+# plot ta using open bb sdk in streamlit
+st.header(f"Bollinger Bands")
+# 
+# if bbands.png exists, display it
 
-    # Check if the barrier level is within the valid range
-    if 0 <= barrier_level <= 200:
-        plot_stocks_with_barrier(stock_names, barrier_level, period)
+if bbands_img:
+    st.image(bbands_img, caption='Bollinger bands chart')
 
-        # Display stock descriptions and summary
-        st.subheader('Stock Descriptions')
-        for stock_name in stock_names:
-            st.write(f"**{stock_name}**")
-            description, sector, industry = get_stock_description(stock_name)
-            st.write(f"Description: {description}")
-            st.write(f"Sector: {sector}")
-            st.write(f"Industry: {industry}")
-            st.write('---')
+donchian_img = build_donchian_img(data, symbol, "donchian.png")
+# plot ta using open bb sdk in streamlit
+st.header(f"Donchian")
 
-        st.subheader('Investment Summary')
-        st.write('Based on historical data and market trends, investing in these stocks could be interesting due to various factors such as strong financial performance, growth potential, and industry dominance. However, it is important to conduct thorough research and consider your own investment goals and risk tolerance before making any investment decisions.')
-
-    else:
-        st.error('Invalid barrier level. Please enter a value between 0 and 200.')
-
-# Run the Streamlit app
-if __name__ == '__main__':
-    main()
+if donchian_img:
+    st.image(donchian_img, caption='Donchian Openbb chart')
