@@ -1,3 +1,6 @@
 openbb
 streamlit
 yfinance
+pandas
+matplotlib.pyplot
+seaborn
