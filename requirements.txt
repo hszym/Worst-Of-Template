@@ -2,5 +2,5 @@ openbb
 streamlit
 yfinance
 pandas
-matplotlib.pyplot
+matplotlib
 seaborn
