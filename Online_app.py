@@ -8,22 +8,16 @@ from openbb_terminal.stocks.stocks_helper import load
 # Set Seaborn style
 sns.set_style('darkgrid')
 
-def get_closing_prices(ticker_list, target_date):
-    closing_prices = {}
-    
-    for ticker in ticker_list:
-        stock_data = load(ticker, target_date, 1440, target_date)
-        
-        if not stock_data.empty:
-            closing_price = stock_data['Close'].iloc[0]
-            closing_prices[ticker] = closing_price
-    
-    return closing_prices
+# ... Other functions and code ...
 
 # Streamlit app code
 def main():
     # Set the page title
     st.title('Closing Prices of Stocks on Specific Date')
+
+    # Add your logo image
+    logo_path = 'logo.png'
+    st.image(logo_path, use_column_width=True)
 
     # Input stock names and target date
     ticker_list = st.text_input('Enter Ticker Symbols (comma-separated)', 'AAPL,GOOGL,MSFT').split(',')
@@ -31,7 +25,7 @@ def main():
 
     if st.button('Get Closing Prices'):
         closing_prices = get_closing_prices(ticker_list, target_date)
-        
+
         if closing_prices:
             st.write('Closing Prices on', target_date)
             for ticker, price in closing_prices.items():
