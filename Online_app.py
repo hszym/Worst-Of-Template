@@ -13,6 +13,7 @@ def get_closing_prices(ticker_list, target_date):
     
     for ticker in ticker_list:
         stock_data = load(ticker, target_date, 1440, target_date)
+        print(f"Ticker: {ticker}, Data: {stock_data}")
         
         if not stock_data.empty:
             closing_price = stock_data['Close'].iloc[0]
