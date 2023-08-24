@@ -26,7 +26,7 @@ def main():
     st.title('Closing Prices of Stocks on Specific Date')
 
     # Add your logo image
-    logo_path = 'logo.png'
+    logo_path = 'logo.png.png'
     st.image(logo_path, use_column_width=True)
 
     # Input stock names and target date
