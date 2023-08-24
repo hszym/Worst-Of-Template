@@ -3,7 +3,6 @@ import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 import seaborn as sns
-from openbb_terminal.stocks.stocks_helper import load
 
 # Set Seaborn style
 sns.set_style('darkgrid')
@@ -12,8 +11,8 @@ def get_closing_prices(ticker_list, target_date):
     closing_prices = {}
     
     for ticker in ticker_list:
-        stock_data = load(ticker, target_date, 1440, target_date)
-        print(f"Ticker: {ticker}, Data: {stock_data}")
+        stock = yf.Ticker(ticker)
+        stock_data = stock.history(period='1d', start=target_date, end=target_date)
         
         if not stock_data.empty:
             closing_price = stock_data['Close'].iloc[0]
@@ -26,8 +25,8 @@ def main():
     # Set the page title
     st.title('Closing Prices of Stocks on Specific Date')
 
-    # Add your logo image
-    logo_path = 'logo.png.png'
+    # Add your logo image from GitHub
+    logo_path = 'https://raw.githubusercontent.com/username/my-repo/main/images/logo.png'
     st.image(logo_path, use_column_width=True)
 
     # Input stock names and target date
