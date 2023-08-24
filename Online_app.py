@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -31,10 +30,10 @@ def main():
 
     # Input stock names and target date
     ticker_list = st.text_input('Enter Ticker Symbols (comma-separated)', 'AAPL,GOOGL,MSFT').split(',')
-    target_date = st.date_input('Select Date', pd.to_datetime('2023-05-26'))
+    target_date = st.date_input('Select Date')
 
     if st.button('Get Closing Prices'):
-        closing_prices = get_closing_prices(ticker_list, target_date)
+        closing_prices = get_closing_prices(ticker_list, target_date.strftime('%Y-%m-%d'))
         
         if closing_prices:
             st.write('Closing Prices on', target_date)
